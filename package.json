@@ -19,6 +19,7 @@
     "prepare": "npm run build",
     "test": "tsx --test tests/**/*.test.ts",
     "test:watch": "tsx --test --watch tests/**/*.test.ts",
+    "convert:mock": "tsx src/main.ts mock/ComplexProjectBoard.tsx --format mdx",
     "lint": "eslint . --ext .ts",
     "lint:fix": "npm run lint -- --fix"
   },
