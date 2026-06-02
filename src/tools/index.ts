@@ -5,9 +5,11 @@ export {
 	type ConvertResult,
 } from "./convert-to-markdown";
 export {
+	printDetail,
 	printBanner,
 	printError,
 	printInfo,
+	printSpacer,
 	printSection,
 	printSuccess,
 	printWarning,

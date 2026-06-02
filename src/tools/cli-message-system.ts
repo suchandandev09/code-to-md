@@ -38,6 +38,14 @@ function writeStderr(message: string): void {
 	process.stderr.write(`${message}\n`);
 }
 
+export function printSpacer(): void {
+	writeStdout("");
+}
+
+export function printDetail(message: string): void {
+	writeStdout(pc.dim(`  - ${message}`));
+}
+
 export function printBanner(title: string): void {
 	writeStdout(pc.bold(pc.blue(title)));
 }
