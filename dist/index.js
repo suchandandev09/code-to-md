@@ -1,13 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.convertReactToMarkdown = convertReactToMarkdown;
-function convertReactToMarkdown(_input, options = {}) {
-    const format = options.format ?? "md";
-    return {
-        output: "",
-        warnings: [
-            `Conversion engine is not implemented yet for '${format}'. This will be added in a later phase.`,
-        ],
-    };
-}
+exports.convertReactToMarkdown = void 0;
+var convert_to_markdown_1 = require("./tools/convert-to-markdown");
+Object.defineProperty(exports, "convertReactToMarkdown", { enumerable: true, get: function () { return convert_to_markdown_1.convertReactToMarkdown; } });
 //# sourceMappingURL=index.js.map

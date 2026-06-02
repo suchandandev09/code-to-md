@@ -82,6 +82,7 @@ After building, the binary is exposed as `code-to-md`.
 
 ```bash
 code-to-md <input-file> [--format md|mdx]
+code-to-md --list
 ```
 
 Examples:
@@ -89,6 +90,7 @@ Examples:
 ```bash
 code-to-md ./Component.tsx
 code-to-md ./Component.tsx --format mdx
+code-to-md --list
 ```
 
 Help:
