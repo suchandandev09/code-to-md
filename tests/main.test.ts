@@ -93,7 +93,9 @@ test("processes current directory when no args are provided", () => {
 
 	assert.equal(result.status, 0);
 	assert.match(result.stdout, /Processing 1 file\(s\) with allowed extensions:/);
-	assert.match(result.stdout, /Processing: Component\.tsx/);
+	assert.match(result.stdout, /File 1\/1:/);
+	assert.match(result.stdout, /Component\.tsx/);
+	assert.match(result.stdout, /Running conversion/);
 	assert.doesNotMatch(result.stdout, /Usage:/);
 
 	fs.rmSync(tempDir, { recursive: true, force: true });
