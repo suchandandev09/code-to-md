@@ -24,3 +24,12 @@ test("fails on invalid --format value", () => {
 	assert.equal(result.status, 1);
 	assert.match(result.stderr, /Invalid value for --format/);
 });
+
+test("fails on unsupported input extension", () => {
+	const result = runCli(["./Component.md", "--format", "mdx"]);
+
+	assert.equal(result.status, 1);
+	assert.match(result.stderr, /Input file extension is not allowed/);
+	assert.match(result.stderr, /\.tsx/);
+	assert.match(result.stderr, /\.jsx/);
+});

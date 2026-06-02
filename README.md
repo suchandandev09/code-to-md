@@ -52,6 +52,30 @@ npm test
 npm run test:watch
 ```
 
+## Mock Live Example
+
+A complex React sample file is available at [mock/ComplexProjectBoard.tsx](mock/ComplexProjectBoard.tsx).
+
+Run a live CLI conversion attempt against the sample:
+
+```bash
+npm run convert:mock
+```
+
+This currently exercises the CLI flow and format parsing. The actual markdown output is still placeholder behavior until the conversion engine is implemented.
+
+## Configuration
+
+Configure allowed input file extensions in [code-to-md.config.json](code-to-md.config.json):
+
+```json
+{
+	"allowedExtensions": [".tsx", ".jsx"]
+}
+```
+
+The CLI searches for this file from your current directory upward and blocks input files with non-allowed extensions.
+
 ## CLI Usage
 
 After building, the binary is exposed as `code-to-md`.
