@@ -1,5 +1,5 @@
 {
-  "name": "react-markdown",
+  "name": "code-to-md",
   "version": "1.0.0",
   "description": "CLI and library to convert React component files to Markdown or MDX",
   "license": "ISC",
@@ -8,7 +8,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "react-markdown": "dist/main.js"
+    "code-to-md": "dist/main.js"
   },
   "files": [
     "dist"
