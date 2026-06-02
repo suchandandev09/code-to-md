@@ -79,3 +79,22 @@ test("shows no-files message with allowed extensions when no match is found", ()
 
 	fs.rmSync(tempDir, { recursive: true, force: true });
 });
+
+test("processes current directory when no args are provided", () => {
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "code-to-md-"));
+	fs.writeFileSync(
+		path.join(tempDir, "code-to-md.config.json"),
+		JSON.stringify({ allowedExtensions: [".tsx", ".jsx"] }),
+		"utf8",
+	);
+	fs.writeFileSync(path.join(tempDir, "Component.tsx"), "export const A = 1;", "utf8");
+
+	const result = runCli([], tempDir);
+
+	assert.equal(result.status, 0);
+	assert.match(result.stdout, /Processing 1 file\(s\) with allowed extensions:/);
+	assert.match(result.stdout, /Processing: Component\.tsx/);
+	assert.doesNotMatch(result.stdout, /Usage:/);
+
+	fs.rmSync(tempDir, { recursive: true, force: true });
+});

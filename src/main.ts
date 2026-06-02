@@ -7,14 +7,20 @@ import {
 	printError,
 	printHelp,
 	printInfo,
+	processCurrentDirectory,
 	printSuccess,
 	printWarning,
 } from "./tools";
 
 const argv = process.argv.slice(2);
 
-if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) {
+if (argv.includes("--help") || argv.includes("-h")) {
 	printHelp();
+	process.exit(0);
+}
+
+if (argv.length === 0) {
+	processCurrentDirectory();
 	process.exit(0);
 }
 
