@@ -14,3 +14,4 @@ export {
 } from "./cli-message-system";
 export { listAllowedFilesInCurrentDirectory } from "./list-allowed-files";
 export { printHelp } from "./print-help";
+export { processCurrentDirectory } from "./process-current-directory";
