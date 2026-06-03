@@ -1,3 +1,4 @@
+// index.ts: Resolves global and localized configuration for CLI processing.
 import path from "node:path";
 import fs from "node:fs";
 
@@ -5,15 +6,27 @@ export interface ConvertConfig {
 	allowedExtensions: string[];
 }
 
+export interface AllowedExtensionsDirective {
+	extensions: string[];
+	merge: boolean;
+}
+
+interface ConfigFilePayload {
+	allowedExtensions?: string[] | {
+		extensions?: string[];
+		merge?: boolean;
+	};
+}
+
 export const DEFAULT_CONFIG: ConvertConfig = {
 	allowedExtensions: [".tsx", ".jsx"],
 };
 
-const CONFIG_FILE_NAME = "code-to-md.config.json";
+const CONFIG_FILE_NAME = "code2md.config.json";
 
-function normalizeExtensions(extensions: string[] | undefined): string[] {
+function normalizeExtensions(extensions: string[] | undefined, fallback: string[]): string[] {
 	if (!extensions || extensions.length === 0) {
-		return DEFAULT_CONFIG.allowedExtensions;
+		return [...fallback];
 	}
 
 	return extensions.map((extension) => {
@@ -22,39 +35,151 @@ function normalizeExtensions(extensions: string[] | undefined): string[] {
 	});
 }
 
-function findConfigFilePath(): string | null {
-	let currentDir = process.cwd();
+function parseAllowedExtensionsDirective(payload: ConfigFilePayload): AllowedExtensionsDirective | null {
+	const allowedExtensions = payload.allowedExtensions;
 
-	for (;;) {
-		const candidate = path.join(currentDir, CONFIG_FILE_NAME);
-		if (fs.existsSync(candidate)) {
-			return candidate;
-		}
-
-		const parentDir = path.dirname(currentDir);
-		if (parentDir === currentDir) {
+	if (Array.isArray(allowedExtensions)) {
+		const extensions = normalizeExtensions(allowedExtensions, []);
+		if (extensions.length === 0) {
 			return null;
 		}
 
-		currentDir = parentDir;
+		return {
+			extensions,
+			merge: false,
+		};
+	}
+
+	if (!allowedExtensions || Array.isArray(allowedExtensions)) {
+		return null;
+	}
+
+	const extensions = normalizeExtensions(allowedExtensions.extensions, []);
+	if (extensions.length === 0) {
+		return null;
+	}
+
+	return {
+		extensions,
+		merge: Boolean(allowedExtensions.merge),
+	};
+}
+
+function applyAllowedExtensionsDirective(
+	baseExtensions: string[],
+	directive: AllowedExtensionsDirective,
+): string[] {
+	if (!directive.merge) {
+		return directive.extensions;
+	}
+
+	return mergeAllowedExtensions(baseExtensions, directive.extensions);
+}
+
+function mergeAllowedExtensions(base: string[], local: string[] | undefined): string[] {
+	if (!local || local.length === 0) {
+		return base;
+	}
+
+	const merged = [...base];
+	for (const extension of local) {
+		if (!merged.includes(extension)) {
+			merged.push(extension);
+		}
+	}
+
+	return merged;
+}
+
+function parseConfigFile(configFilePath: string): ConfigFilePayload | null {
+	try {
+		const raw = fs.readFileSync(configFilePath, "utf8");
+		return JSON.parse(raw) as ConfigFilePayload;
+	} catch {
+		return null;
 	}
 }
 
-export function getConfig(): ConvertConfig {
-	const configFilePath = findConfigFilePath();
-	if (!configFilePath) {
-		return DEFAULT_CONFIG;
+function getDirectoryHierarchy(targetDir: string): string[] {
+	const hierarchy: string[] = [];
+	let currentDir = path.resolve(targetDir);
+
+	for (;;) {
+		hierarchy.push(currentDir);
+		const parentDir = path.dirname(currentDir);
+		if (parentDir === currentDir) {
+			break;
+		}
+		currentDir = parentDir;
 	}
 
-	try {
-		const raw = fs.readFileSync(configFilePath, "utf8");
-		const parsed = JSON.parse(raw) as { allowedExtensions?: string[] };
-		return {
-			allowedExtensions: normalizeExtensions(parsed.allowedExtensions),
+	return hierarchy.reverse();
+}
+
+export function getConfigForDirectory(targetDir: string): ConvertConfig {
+	const directories = getDirectoryHierarchy(targetDir);
+	let hasExplicitConfig = false;
+	let config: ConvertConfig = {
+		allowedExtensions: [...DEFAULT_CONFIG.allowedExtensions],
+	};
+
+	for (const directory of directories) {
+		const configFilePath = path.join(directory, CONFIG_FILE_NAME);
+		if (!fs.existsSync(configFilePath)) {
+			continue;
+		}
+
+		const parsed = parseConfigFile(configFilePath);
+		if (!parsed) {
+			continue;
+		}
+
+		const directive = parseAllowedExtensionsDirective(parsed);
+		if (!directive) {
+			continue;
+		}
+
+		if (!hasExplicitConfig) {
+			hasExplicitConfig = true;
+			config = {
+				allowedExtensions: applyAllowedExtensionsDirective(config.allowedExtensions, directive),
+			};
+			continue;
+		}
+
+		config = {
+			allowedExtensions: applyAllowedExtensionsDirective(config.allowedExtensions, directive),
 		};
-	} catch {
-		return DEFAULT_CONFIG;
 	}
+
+	return config;
+}
+
+export function getLocalConfigForDirectory(targetDir: string): AllowedExtensionsDirective | null {
+	const configFilePath = path.join(path.resolve(targetDir), CONFIG_FILE_NAME);
+	if (!fs.existsSync(configFilePath)) {
+		return null;
+	}
+
+	const parsed = parseConfigFile(configFilePath);
+	if (!parsed) {
+		return null;
+	}
+
+	return parseAllowedExtensionsDirective(parsed);
+}
+
+export function mergeConfigs(
+	baseConfig: ConvertConfig,
+	localConfig: AllowedExtensionsDirective,
+): ConvertConfig {
+	return {
+		allowedExtensions: applyAllowedExtensionsDirective(baseConfig.allowedExtensions, localConfig),
+	};
+}
+
+export function getConfig(): ConvertConfig {
+	return getConfigForDirectory(process.cwd());
 }
 
 export function getAllowedExtensions(): string[] {
@@ -62,6 +187,8 @@ export function getAllowedExtensions(): string[] {
 }
 
 export function isAllowedInputExtension(inputPath: string): boolean {
+	const absoluteInputPath = path.resolve(process.cwd(), inputPath);
+	const effectiveConfig = getConfigForDirectory(path.dirname(absoluteInputPath));
 	const extension = path.extname(inputPath).toLowerCase();
-	return getAllowedExtensions().includes(extension);
+	return effectiveConfig.allowedExtensions.includes(extension);
 }

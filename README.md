@@ -66,7 +66,7 @@ This currently exercises the CLI flow and format parsing. The actual markdown ou
 
 ## Configuration
 
-Configure allowed input file extensions in [code-to-md.config.json](code-to-md.config.json):
+Configure allowed input file extensions in [code2md.config.json](code2md.config.json):
 
 ```json
 {
@@ -74,7 +74,27 @@ Configure allowed input file extensions in [code-to-md.config.json](code-to-md.c
 }
 ```
 
+Local config can also use object form to control merge behavior:
+
+```json
+{
+	"allowedExtensions": {
+		"extensions": [".jsx"],
+		"merge": true
+	}
+}
+```
+
 The CLI searches for this file from your current directory upward and blocks input files with non-allowed extensions.
+
+Localized config behavior:
+
+- Config is inherited from parent directories.
+- If local config uses array form (`"allowedExtensions": [".jsx"]`), it replaces the effective extensions for that directory subtree.
+- If local config uses object form with `"merge": true`, it merges local extensions with the effective config.
+- If object form omits `merge` or sets `"merge": false`, it replaces the effective extensions.
+- That scoped config applies only to that directory and its children.
+- After processing leaves that directory, the local override is no longer applied.
 
 ## CLI Usage
 

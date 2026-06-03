@@ -1,9 +1,22 @@
+// list-allowed-files.ts: Lists files using localized per-directory config merging.
 import fs from "node:fs";
 import path from "node:path";
 
-import { isAllowedInputExtension } from "../config";
+import {
+	type ConvertConfig,
+	getConfigForDirectory,
+	getLocalConfigForDirectory,
+	mergeConfigs,
+} from "../config";
 
-function walkDirectory(dirPath: string, files: string[]): void {
+function isAllowedForConfig(inputPath: string, config: ConvertConfig): boolean {
+	const extension = path.extname(inputPath).toLowerCase();
+	return config.allowedExtensions.includes(extension);
+}
+
+function walkDirectory(dirPath: string, config: ConvertConfig, files: string[]): void {
+	const localConfig = getLocalConfigForDirectory(dirPath);
+	const scopedConfig = localConfig ? mergeConfigs(config, localConfig) : config;
 	const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
 	for (const entry of entries) {
@@ -14,11 +27,11 @@ function walkDirectory(dirPath: string, files: string[]): void {
 				continue;
 			}
 
-			walkDirectory(fullPath, files);
+			walkDirectory(fullPath, scopedConfig, files);
 			continue;
 		}
 
-		if (entry.isFile() && isAllowedInputExtension(fullPath)) {
+		if (entry.isFile() && isAllowedForConfig(fullPath, scopedConfig)) {
 			files.push(fullPath);
 		}
 	}
@@ -27,8 +40,9 @@ function walkDirectory(dirPath: string, files: string[]): void {
 export function listAllowedFilesInCurrentDirectory(): string[] {
 	const cwd = process.cwd();
 	const files: string[] = [];
+	const baseConfig = getConfigForDirectory(cwd);
 
-	walkDirectory(cwd, files);
+	walkDirectory(cwd, baseConfig, files);
 
 	return files
 		.map((filePath) => path.relative(cwd, filePath))
